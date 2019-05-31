@@ -4,44 +4,36 @@ import java.io.*;
 import java.net.*;
 
 public class ServerSide {
-
-	public int byte4ToInt(byte[] retBuf, int set){
-		int toInt = 0;
-
-		toInt = ((retBuf[set+3]&0xFF) << 24) + ((retBuf[set+2]&0xFF) << 16) + ((retBuf[set+1]&0xFF) << 8) + (retBuf[set]&0xFF);
-		return toInt;
-	}
-
-	/*
-	 * Swapping byte orders of given numeric types
-	 */
-
-	static short swap(short x) {
-		return (short)((x << 8) | ((x >> 8) & 0xff));
-	}
-
-	static char swap(char x) {
-		return (char)((x << 8) | ((x >> 8) & 0xff));
-	}
-
-	static int swap(int x) {
-		return (int)((swap((short)x) << 16) | (swap((short)(x >> 16)) & 0xffff));
-	}
-
-	static long swap(long x) {
-		return (long)(((long)swap((int)(x)) << 32) | ((long)swap((int)(x >> 32)) & 0xffffffffL));
-	}
-
-	static float swap(float x) {
-		return Float.intBitsToFloat(swap(Float.floatToRawIntBits(x)));
-	}
-
-	static double swap(double x) {
-		return Double.longBitsToDouble(swap(Double.doubleToRawLongBits(x)));
-	}
-
-
 	public static void main(String args[]) {
+		Socket s = null;
+
+		try {
+			ServerSocket server = new ServerSocket(8090);
+			System.out.println("Java Server Starting... ");
+			
+			while (true) {
+				s = server.accept();
+				
+				String clientIP = s.getInetAddress().toString();
+				int clientPort = s.getPort();
+				System.out.println("[" + clientIP + " : " + clientPort + "] : Connected\n");
+				
+				Connected con = new Connected(s);
+				con.start();
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+}
+
+class Connected extends Thread{
+	Socket s;
+	public Connected(Socket sock) {
+		this.s = sock;
+	}
+	
+	public void run() {
 		DataInputStream dis = null;
 		DataOutputStream dos = null;
 
@@ -49,42 +41,18 @@ public class ServerSide {
 		db.conToDB();
 
 		try {
-
-			Socket s = null;
-
-			int port = Integer.parseInt("2018");
-
-			ServerSocket ss = new ServerSocket(port);
-
-			System.out.println("Java Server Starting... ");
-
-			while(true) { // 데몬이 되기 위한 무한 루프 
-				s = ss.accept();
-
-				String clientIP = s.getInetAddress().toString();
-				int clientPort = s.getPort();
-				System.out.println("Client from " + clientIP + " : " + clientPort + "\n");
-
-
+			while(true) {
 				dis = new DataInputStream(s.getInputStream());
 				dos = new DataOutputStream(s.getOutputStream());
 
-				/*
-					System.out.println("1 >> "+ swap(dis.readInt()));
-					System.out.println("2 >> "+ (char)dis.readByte());
-					System.out.println("3 >> "+ (char)dis.readByte());
-					System.out.println("4 >> "+ swap(dis.readDouble()));
-					System.out.println("5 >> "+ swap(dis.readDouble()));
-				 */
 				while(true) {
 					
 					String msg = dis.readLine();
 					
-					//System.out.println("1 >> " + msg);
-					if (!msg.contains(","))
+					if (!msg.contains(",,"))
 						continue;
 					
-					String[] token = msg.split(",");
+					String[] token = msg.split(",,");
 					
 					System.out.print("Receive : ");
 					for (int i = 1; i < token.length; i++) {
@@ -184,11 +152,18 @@ public class ServerSide {
 					}
 					db.clearLists();
 				}
+				String clientIP = s.getInetAddress().toString();
+				int clientPort = s.getPort();
+				System.out.println("[" + clientIP + " : " + clientPort + "] : Disconnected\n");
+				
 				s.close(); // 소켓을 닫는다
+				db.disconToDB();
+				return;
 			}
-		}catch(Exception e) {	
+		} catch(Exception e) {	
 			System.out.println("Exception: " + e);
+			db.disconToDB();
+			return;
 		}
-		db.disconToDB();
 	}
 } 
