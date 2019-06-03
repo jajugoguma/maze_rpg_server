@@ -91,12 +91,48 @@ public class DBSide {
 		System.out.println();
 	}
 	
+	public void getRanking() {
+		try {
+			query = "select name, lv, state_num "
+					+ "from character "
+					+ "where name != 'GM' "
+					+ "order by state_num DESC, lv DESC";
+			
+			System.out.println("Execute : " + query);
+
+			stmt = conn.createStatement();
+			rs = stmt.executeQuery(query);				//query 수행.
+			
+			System.out.println("Send >>");
+			while (rs.next()) {							//모든 행을 출력할때 까지 데이터를 받아 출력한다.
+				String name = rs.getString("name");
+				Integer level = rs.getInt("lv");
+				Integer state_num = rs.getInt("state_num");
+				
+				LinkedList<String> tmpList = new LinkedList<String>();
+				String tmpString = "";
+				
+				tmpList.add("name : " + name);
+				tmpList.add(" level : " + level.toString());
+				tmpList.add(" stage : " + state_num.toString());
+				
+				for (String get : tmpList)
+					tmpString += get + " ";
+				
+				System.out.println(tmpString);
+				datalist.add(tmpString);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		System.out.println();
+	}
+	
 	public void getItemOwned(String name) {
 		try {
 			query = "select * "
 					+ "from item_owned "
-					+ "where c_name = '" + name + "' "
-					+ "order by item_no";
+					+ "where c_name = '" + name + "' ";
 			
 			System.out.println("Execute : " + query);
 
@@ -274,6 +310,27 @@ public class DBSide {
 			
 			cstmt = conn.prepareCall(query);
 			cstmt.setString(1, name);
+			cstmt.registerOutParameter(2, java.sql.Types.VARCHAR);
+			
+			cstmt.execute();
+			
+			result = cstmt.getString(2);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		System.out.print("Send : ");
+		System.out.println(result + "\n");
+		return result;
+	}
+	
+	public String delAccount(String id) {
+		String result = null;
+		try {
+			query = "call deleteAccount(?,?)";
+			System.out.println("Execute : " + query);
+			
+			cstmt = conn.prepareCall(query);
+			cstmt.setString(1, id);
 			cstmt.registerOutParameter(2, java.sql.Types.VARCHAR);
 			
 			cstmt.execute();

@@ -74,6 +74,20 @@ class Connected extends Thread{
 						dos.write(ret);
 						dos.flush();
 					}
+					else if (token[1].compareTo("RANK") == 0) {
+						db.getRanking();
+						byte[] ret = null;
+
+						String tmp = "";
+
+						for (String get : db.datalist)
+							tmp += get + ",";
+
+						tmp += '\0';
+						ret = (tmp).getBytes();
+						dos.write(ret);
+						dos.flush();
+					}
 					else if (token[1].compareTo("LOADITEM") == 0) {
 						db.getItemOwned(token[2]);
 						byte[] ret = null;
@@ -133,6 +147,15 @@ class Connected extends Thread{
 						byte[] ret = null;
 						
 						String result = db.delCharacter(token[2]);
+						result += '\0';
+						ret = (result).getBytes();
+						dos.write(ret);
+						dos.flush();
+					}
+					else if (token[1].compareTo("DELACC") == 0) {	
+						byte[] ret = null;
+						
+						String result = db.delAccount(token[2]);
 						result += '\0';
 						ret = (result).getBytes();
 						dos.write(ret);
